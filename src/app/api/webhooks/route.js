@@ -100,5 +100,5 @@ export async function POST(req) {
     }
   }
 
-  return new Response("Webhook received", { status: 200 });
+  return new Response("", { status: 200 });
 }
