@@ -14,7 +14,7 @@ export async function POST(req) {
   }
 
   // Get the headers
-  const headerPayload = headers();
+  const headerPayload = await headers();
   const svix_id = headerPayload.get("svix-id");
   const svix_timestamp = headerPayload.get("svix-timestamp");
   const svix_signature = headerPayload.get("svix-signature");
@@ -33,15 +33,23 @@ export async function POST(req) {
   // Create a new Svix instance with your secret.
   const wh = new Webhook(WEBHOOK_SECRET);
 
-  let evt;
+  // let evt;
 
   // Verify the payload with the headers
   try {
-    evt = wh.verify(body, {
+    const evt = wh.verify(body, {
       "svix-id": svix_id,
       "svix-timestamp": svix_timestamp,
       "svix-signature": svix_signature,
     });
+
+    if (evt.type === "user.created" || evt.type === "user.updated") {
+      await createOrUpdateUser(evt.data);
+    } else if (evt.type === "user.deleted") {
+      await deleteUser(evt.data);
+    }
+
+    return new Response("Webhook processed", { status: 200 });
   } catch (err) {
     console.error("Error verifying webhook:", err);
     return new Response("Error occured", {
